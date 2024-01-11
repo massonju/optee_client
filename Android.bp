@@ -1,0 +1,133 @@
+//
+// Copyright (C) 2024 The Android Open Source Project
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package {
+    default_applicable_licenses: ["Android-Apache-2.0"],
+}
+
+soong_config_module_type {
+    name: "optee_client_cflags_cc_defaults",
+    module_type: "cc_defaults",
+    config_namespace: "optee_client",
+    bool_variables: [
+        "cfg_debug",
+        "cfg_werror",
+    ],
+    properties: ["cflags"],
+}
+
+optee_client_cflags_cc_defaults {
+    name: "optee_client_cflags_defaults",
+    cflags: [
+        "-c",
+        "-fPIC",
+        "-Wall",
+        "-Wbad-function-cast",
+        "-Wcast-align",
+        "-Werror-implicit-function-declaration",
+        "-Wextra",
+        "-Wfloat-equal",
+        "-Wformat-nonliteral",
+        "-Wformat-security",
+        "-Wformat=2",
+        "-Winit-self",
+        "-Wmissing-declarations",
+        "-Wmissing-format-attribute",
+        "-Wmissing-include-dirs",
+        "-Wmissing-noreturn",
+        "-Wmissing-prototypes",
+        "-Wnested-externs",
+        "-Wpointer-arith",
+        "-Wshadow",
+        "-Wstrict-prototypes",
+        "-Wswitch-default",
+        "-Wwrite-strings",
+    ],
+    soong_config_variables: {
+        cfg_debug: {
+            cflags: [
+                "-DDEBUG",
+                "-O0",
+                "-g",
+            ],
+        },
+        cfg_werror: {
+            cflags: ["-Werror"],
+        },
+    },
+}
+
+soong_config_module_type {
+    name: "optee_client_libteec_cc_defaults",
+    module_type: "cc_defaults",
+    config_namespace: "optee_client",
+    bool_variables: [
+        "cfg_tee_benchmark",
+    ],
+    value_variables: [
+        "cfg_tee_client_log_level",
+        "cfg_tee_client_log_file",
+    ],
+    properties: [
+        "cflags",
+        "srcs",
+    ],
+}
+
+optee_client_libteec_cc_defaults {
+    name: "optee_client_libteec_defaults",
+    soong_config_variables: {
+        cfg_tee_benchmark: {
+            cflags: ["-DCFG_TEE_BENCHMARK"],
+            srcs: ["teec_benchmark.c"],
+        },
+        cfg_tee_client_log_level: {
+            cflags: ["-DDEBUGLEVEL_%s"],
+            conditions_default: {
+                cflags: ["-DDEBUGLEVEL_1"],
+            },
+        },
+        cfg_tee_client_log_file: {
+            cflags: ["-DTEEC_LOG_FILE=\"%s\""],
+            conditions_default: {
+                cflags: ["-DTEEC_LOG_FILE=\"/data/tee/teec.log\""],
+            },
+        },
+    },
+}
+
+cc_library_shared {
+    name: "libteec",
+    vendor: true,
+    compile_multilib: "both",
+    defaults: [
+        "optee_client_cflags_defaults",
+        "optee_client_libteec_defaults",
+    ],
+    cflags: [
+        "-DBINARY_PREFIX=\"TEEC\"",
+    ],
+    srcs: [
+        "libteec/src/tee_client_api.c",
+        "libteec/src/teec_trace.c",
+    ],
+    local_include_dirs: [
+        "public",
+        "libteec/include",
+    ],
+    export_include_dirs: [
+        "public",
+    ],
+}
